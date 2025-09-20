@@ -115,6 +115,24 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            {{-- ▼▼▼ BLOK BARU: Shift ▼▼▼ --}}
+                            <div>
+                                <label for="shift_id" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                    <i class="fas fa-clock text-dark-blue mr-2 text-sm"></i> Jadwal Kerja (Shift)
+                                </label>
+                                <select name="shift_id" id="shift_id"
+                                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-dark-blue focus:border-dark-blue transition">
+                                    <option value="">-- Tidak Ada Shift --</option>
+                                    @foreach($shifts as $shift)
+                                        <option value="{{ $shift->id }}" {{ old('shift_id', $user->shift_id) == $shift->id ? 'selected' : '' }}>
+                                            {{ $shift->name }} ({{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('shift_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                            </div>
+                            {{-- ▲▲▲ END BLOK BARU ▲▲▲ --}}
                             
                             <div>
                                 <label for="password" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">

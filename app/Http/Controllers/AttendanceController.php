@@ -80,17 +80,26 @@ class AttendanceController extends Controller
             }
         }
 
-        // --- 4. Simpan Data Absensi Jika Validasi Berhasil ---
+        // --- 4. Tentukan Status (On Time / Late) ---
+        $status = 'On Time';
+        $shift = $user->shift; // pastikan relasi shift ada di model User
+
+        if ($shift && $now->format('H:i:s') > $shift->start_time) {
+            $status = 'Late';
+        }
+
+        // --- 5. Simpan Data Absensi ---
         Attendance::create([
-            'user_id' => $user->id,
-            'location_id' => $locationId,
-            'check_in' => $now,
-            'check_in_latitude' => $latitude,
+            'user_id'            => $user->id,
+            'location_id'        => $locationId,
+            'check_in'           => $now,
+            'check_in_latitude'  => $latitude,
             'check_in_longitude' => $longitude,
-            'check_in_type' => $type,
+            'check_in_type'      => $type,
+            'status'             => $status,
         ]);
 
-        return back()->with('success', 'Berhasil melakukan absen masuk!');
+        return back()->with('success', 'Berhasil melakukan absen masuk dengan status: ' . $status);
     }
 
     public function checkOut(Request $request)

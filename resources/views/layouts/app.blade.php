@@ -7,37 +7,43 @@
 
         <title>{{ config('app.name', 'G-Attendance') }}</title>
 
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Styles -->
-        @vite(['resources/css/app.css'])
-
-        {{-- Slot ini penting untuk memuat CSS spesifik halaman, seperti Leaflet.js --}}
-        @stack('styles')
-
-        <!-- Scripts -->
-        @vite(['resources/js/app.js'])
         
-        {{-- Slot ini penting untuk memuat JS library (seperti Leaflet.js) sebelum <body> --}}
-        @stack('head-scripts')
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        @stack('styles')
     </head>
-    <body class="font-sans antialiased">
-        {{-- Pembungkus utama dengan state AlpineJS, tinggi layar penuh, dan overflow tersembunyi --}}
-        <div x-data="{ sidebarOpen: true }" class="relative h-screen flex overflow-hidden bg-slate-100">
+    <body x-data="{ sidebarOpen: true }" class="font-sans antialiased">
+        <div class="min-h-screen bg-light-gray">
             
-            <!-- Sidebar -->
             @include('layouts.navigation')
 
-            <!-- Konten Utama - Area ini yang bisa di-scroll secara independen -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                {{ $slot }}
-            </main>
+            {{-- ▼▼▼ PERUBAHAN UTAMA ADA DI BARIS INI ▼▼▼ --}}
+            <div class="transition-all duration-300 ease-in-out pl-20" :class="sidebarOpen ? 'lg:pl-64' : 'lg:pl-20'">
+                
+                {{-- Header Halaman (jika diperlukan di masa depan) --}}
+                @if (isset($header))
+                    <header class="bg-white shadow">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endif
+                
+                <main>
+                    <div class="py-12">
+                        {{-- Hapus padding horizontal default agar konten bisa full-width --}}
+                        <div class="mx-auto sm:px-6 lg:px-8">
+                            {{ $slot }}
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
-
-        {{-- Slot ini penting untuk memuat JavaScript inisialisasi di akhir halaman --}}
+        
         @stack('scripts')
     </body>
 </html>
-

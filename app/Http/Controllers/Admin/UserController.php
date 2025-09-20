@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Division;
+use App\Models\Shift; // <-- 1. DITAMBAHKAN
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -17,10 +19,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        // Memulai query dasar dengan relasi yang dibutuhkan (eager loading)
-        $query = User::with('division', 'employmentData')->latest();
+        $query = User::with('division', 'employmentData', 'shift')->latest();
 
-        // Terapkan filter jika ada input dari user
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
@@ -35,10 +35,7 @@ class UserController extends Controller
             });
         }
 
-        // Ambil hasil query dengan paginasi, dan pertahankan filter saat ganti halaman
-        $users = $query->paginate(5)->withQueryString();
-        
-        // Ambil semua divisi untuk ditampilkan di dropdown filter
+        $users = $query->paginate(10)->withQueryString();
         $divisions = Division::orderBy('name')->get();
 
         return view('admin.users.index', compact('users', 'divisions'));
@@ -50,7 +47,8 @@ class UserController extends Controller
     public function create()
     {
         $divisions = Division::orderBy('name')->get();
-        return view('admin.users.create', compact('divisions'));
+        $shifts = Shift::orderBy('name')->get(); // <-- 2. Mengambil data shift
+        return view('admin.users.create', compact('divisions', 'shifts')); // <-- 2. Mengirim data shift ke view
     }
 
     /**
@@ -59,14 +57,12 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // Validasi untuk tabel 'users'
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'division_id' => ['required', 'exists:divisions,id'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'], // Maksimal 2MB
-
-            // Validasi untuk data tambahan
+            'shift_id' => ['nullable', 'exists:shifts,id'], // <-- 3. Validasi untuk shift_id
+            'profile_photo' => ['nullable', 'image', 'max:2048'],
             'birth_date' => ['nullable', 'date'],
             'join_date' => ['nullable', 'date'],
             'employment_status' => ['nullable', 'string', 'max:255'],
@@ -77,26 +73,22 @@ class UserController extends Controller
             $path = $request->file('profile_photo')->store('profile-photos', 'public');
         }
 
-        // 1. Buat data user utama
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'division_id' => $request->division_id,
+            'shift_id' => $request->shift_id, // <-- 3. Menyimpan shift_id
             'profile_photo_path' => $path,
         ]);
 
-        // 2. Buat data profil yang terhubung dengan user baru
         $user->profile()->create([
             'birth_date' => $request->birth_date,
-            // Tambahkan field lain dari 'user_profiles' di sini jika sudah ada di form
         ]);
         
-        // 3. Buat data pekerjaan yang terhubung dengan user baru
         $user->employmentData()->create([
             'join_date' => $request->join_date,
             'employment_status' => $request->employment_status,
-             // Tambahkan field lain dari 'user_employment_data' di sini jika sudah ada di form
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'Karyawan baru berhasil ditambahkan.');
@@ -107,10 +99,10 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        // Eager load relasi agar tidak terjadi N+1 query di view
         $user->load('profile', 'employmentData');
         $divisions = Division::orderBy('name')->get();
-        return view('admin.users.edit', compact('user', 'divisions'));
+        $shifts = Shift::orderBy('name')->get(); // <-- 4. Mengambil data shift
+        return view('admin.users.edit', compact('user', 'divisions', 'shifts')); // <-- 4. Mengirim data shift ke view
     }
 
     /**
@@ -123,16 +115,17 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class.',email,'.$user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'division_id' => ['required', 'exists:divisions,id'],
+            'shift_id' => ['nullable', 'exists:shifts,id'], // <-- 5. Validasi untuk shift_id
             'profile_photo' => ['nullable', 'image', 'max:2048'],
             'birth_date' => ['nullable', 'date'],
             'join_date' => ['nullable', 'date'],
             'employment_status' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // 1. Update data di tabel 'users'
         $user->name = $request->name;
         $user->email = $request->email;
         $user->division_id = $request->division_id;
+        $user->shift_id = $request->shift_id; // <-- 5. Menyimpan shift_id
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -147,13 +140,11 @@ class UserController extends Controller
         
         $user->save();
 
-        // 2. Update atau buat data di 'user_profiles'
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             ['birth_date' => $request->birth_date]
         );
         
-        // 3. Update atau buat data di 'user_employment_data'
         $user->employmentData()->updateOrCreate(
             ['user_id' => $user->id],
             ['join_date' => $request->join_date, 'employment_status' => $request->employment_status]
@@ -167,7 +158,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if (auth()->id() == $user->id) {
+        if (Auth::id() == $user->id) {
             return back()->with('error', 'Anda tidak bisa menghapus akun Anda sendiri.');
         }
         
@@ -175,8 +166,7 @@ class UserController extends Controller
             Storage::disk('public')->delete($user->profile_photo_path);
         }
 
-        $user->delete(); // Karena ada 'cascade', data profile & employment akan ikut terhapus.
+        $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Karyawan berhasil dihapus.');
     }
 }
-

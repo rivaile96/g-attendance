@@ -17,9 +17,12 @@ class DashboardController extends Controller
         // Data untuk Kartu Statistik (KPI Cards)
         $totalEmployees = User::count();
         $presentToday = Attendance::whereDate('check_in', $today)->count();
+
+        // 🔥 update: pakai kolom 'status' langsung
         $lateToday = Attendance::whereDate('check_in', $today)
-                               ->whereTime('check_in', '>', '08:00:00')
+                               ->where('status', 'Late') // hitung hanya yang terlambat
                                ->count();
+
         $absentToday = $totalEmployees - $presentToday;
 
         // Data untuk Grafik Absensi Mingguan
@@ -37,11 +40,11 @@ class DashboardController extends Controller
         // Kita hanya mengirim data yang dibutuhkan, tanpa layout
         return view('dashboard', [
             'totalEmployees' => $totalEmployees,
-            'presentToday' => $presentToday,
-            'lateToday' => $lateToday,
-            'absentToday' => $absentToday,
-            'chartLabels' => $chartLabels,
-            'chartData' => $chartData,
+            'presentToday'   => $presentToday,
+            'lateToday'      => $lateToday,
+            'absentToday'    => $absentToday,
+            'chartLabels'    => $chartLabels,
+            'chartData'      => $chartData,
         ]);
     }
 }
