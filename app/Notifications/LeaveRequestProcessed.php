@@ -2,27 +2,28 @@
 
 namespace App\Notifications;
 
+use App\Models\Leave;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class LeaveRequestProcessed extends Notification
+class LeaveRequestProcessed extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    protected $leave;
+
     /**
-     * Create a new notification instance.
+     * Buat instance notifikasi baru.
      */
-    public function __construct()
+    public function __construct(Leave $leave)
     {
-        //
+        $this->leave = $leave;
     }
 
     /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
+     * Tentukan channel pengiriman notifikasi (bisa email, database, dll).
      */
     public function via(object $notifiable): array
     {
@@ -30,25 +31,30 @@ class LeaveRequestProcessed extends Notification
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Buat representasi email dari notifikasi.
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
-    }
+        $startDate = $this->leave->start_date->translatedFormat('d F Y');
+        $endDate = $this->leave->end_date->translatedFormat('d F Y');
+        $status = $this->leave->status;
+        $type = $this->leave->type;
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            //
-        ];
+        if ($status === 'Approved') {
+            return (new MailMessage)
+                ->subject('Pengajuan Cuti Disetujui')
+                ->greeting('Halo, ' . $notifiable->name . '!')
+                ->line("Kabar baik! Pengajuan {$type} Anda untuk tanggal {$startDate} hingga {$endDate} telah disetujui.")
+                ->action('Lihat Riwayat Cuti', route('leaves.index'))
+                ->line('Selamat beristirahat!');
+        } else {
+            return (new MailMessage)
+                ->subject('Pengajuan Cuti Ditolak')
+                ->greeting('Halo, ' . $notifiable->name . '.')
+                ->line("Mohon maaf, pengajuan {$type} Anda untuk tanggal {$startDate} hingga {$endDate} tidak dapat disetujui saat ini.")
+                ->line('Alasan Penolakan: ' . ($this->leave->rejection_reason ?? 'Tidak ada alasan spesifik.'))
+                ->action('Lihat Riwayat Cuti', route('leaves.index'))
+                ->line('Silakan hubungi HR jika ada pertanyaan lebih lanjut.');
+        }
     }
 }

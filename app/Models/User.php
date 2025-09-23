@@ -33,7 +33,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Kolom yang bisa diisi massal.
      *
      * @var array<int, string>
      */
@@ -42,12 +42,12 @@ class User extends Authenticatable
         'email',
         'password',
         'division_id',
-        'shift_id', // <-- DITAMBAHKAN
+        'shift_id',
         'profile_photo_path',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Kolom yang disembunyikan saat serialisasi.
      *
      * @var array<int, string>
      */
@@ -57,18 +57,18 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Casting tipe data.
      *
      * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'is_admin' => 'boolean',
+        'password'          => 'hashed',
+        'is_admin'          => 'boolean',
     ];
 
     /**
-     * Mendefinisikan relasi: Satu User PASTI MILIK satu Divisi.
+     * Relasi: User -> Division (many to one).
      */
     public function division()
     {
@@ -76,7 +76,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Mendefinisikan relasi: Satu User PASTI MILIK satu Shift.
+     * Relasi: User -> Shift (many to one).
      */
     public function shift()
     {
@@ -84,7 +84,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Mendefinisikan relasi: Satu User punya BANYAK Absensi.
+     * Relasi: User -> Attendance (one to many).
      */
     public function attendances()
     {
@@ -92,7 +92,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Mendefinisikan relasi: Satu User punya SATU Profil.
+     * Relasi: User -> Profile (one to one).
      */
     public function profile()
     {
@@ -100,11 +100,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Mendefinisikan relasi: Satu User punya SATU set Data Pekerjaan.
+     * Relasi: User -> EmploymentData (one to one).
      */
     public function employmentData()
     {
         return $this->hasOne(UserEmploymentData::class);
     }
 }
-

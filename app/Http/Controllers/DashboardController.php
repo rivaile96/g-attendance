@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Attendance;
+use App\Models\Holiday; // ✅ suntikan model Holiday
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,9 @@ class DashboardController extends Controller
     {
         $today = Carbon::today('Asia/Jakarta');
 
+        // ✅ cek apakah hari ini libur
+        $isHoliday = Holiday::where('date', $today)->exists();
+
         // Data untuk Kartu Statistik (KPI Cards)
         $totalEmployees = User::count();
         $presentToday = Attendance::whereDate('check_in', $today)->count();
@@ -23,7 +27,8 @@ class DashboardController extends Controller
                                ->where('status', 'Late') // hitung hanya yang terlambat
                                ->count();
 
-        $absentToday = $totalEmployees - $presentToday;
+        // ✅ Logika Baru: kalau hari ini libur, anggap semua hadir (absent = 0)
+        $absentToday = $isHoliday ? 0 : $totalEmployees - $presentToday;
 
         // Data untuk Grafik Absensi Mingguan
         $chartData = [];
@@ -45,6 +50,7 @@ class DashboardController extends Controller
             'absentToday'    => $absentToday,
             'chartLabels'    => $chartLabels,
             'chartData'      => $chartData,
+            'isHoliday'      => $isHoliday, // ✅ opsional: bisa dipakai di view
         ]);
     }
 }

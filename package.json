@@ -7,6 +7,7 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@alpinejs/collapse": "^3.15.0",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/vite": "^4.0.0",
         "alpinejs": "^3.4.2",
@@ -19,6 +20,9 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
+        "@fullcalendar/core": "^6.1.19",
+        "@fullcalendar/daygrid": "^6.1.19",
+        "@fullcalendar/interaction": "^6.1.19",
         "apexcharts": "^5.3.4",
         "gridstack": "^12.3.3",
         "gsap": "^3.13.0",

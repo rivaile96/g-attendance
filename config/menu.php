@@ -57,6 +57,11 @@ return [
                 'icon'  => 'fa-solid fa-check-to-slot',
                 'route' => 'admin.leaves.index',
             ],
+            [
+                'title' => 'Hari Libur',
+                'icon'  => 'fa-solid fa-calendar-check',
+                'route' => 'admin.holidays.index',
+            ],
             // ▲▲▲ ------------------------------- ▲▲▲
             [
                 'title' => 'Jadwal Kerja',
