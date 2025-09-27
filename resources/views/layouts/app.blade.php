@@ -35,7 +35,10 @@
         </div>
 
         <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-        
-        @stack('scripts')
-    </body>
+            {{-- ▼▼▼ TAMBAHKAN SCRIPT INI ▼▼▼ --}}
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {{-- ▲▲▲ ----------------------- ▲▲▲ --}}
+
+    @stack('scripts')
+</body>
 </html>

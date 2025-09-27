@@ -34,7 +34,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/leaves/create', [LeaveController::class, 'create'])->name('leaves.create');
     Route::post('/leaves', [LeaveController::class, 'store'])->name('leaves.store');
 
+    // Rute Laporan Absensi
     Route::get('/reports/attendances', [ReportController::class, 'attendances'])->name('reports.attendances');
+
+    // ▼▼▼ TAMBAHKAN RUTE INI ▼▼▼
+    Route::get('/reports/attendances/pdf', [ReportController::class, 'downloadPdf'])->name('reports.attendances.pdf');
+    // ▲▲▲ ----------------------- ▲▲▲
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

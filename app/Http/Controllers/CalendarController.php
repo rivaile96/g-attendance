@@ -22,7 +22,7 @@ class CalendarController extends Controller
             $events[] = [
                 'id'    => 'h-' . $holiday->id,
                 'title' => $holiday->description,
-                'start' => $holiday->date->format('Y-m-d'),
+                'start' => Carbon::parse($holiday->date)->format('Y-m-d'),
                 'allDay' => true,
                 'backgroundColor' => '#EF4444', // merah
                 'borderColor' => '#EF4444',

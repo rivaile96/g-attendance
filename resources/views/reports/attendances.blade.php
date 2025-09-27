@@ -1,9 +1,18 @@
 <x-app-layout>
     <div class="space-y-6">
-        <div>
-            <h1 class="text-3xl font-bold text-dark-blue">Laporan Absensi</h1>
-            <p class="text-gray-500 mt-1">Lihat dan kelola riwayat absensi.</p>
+        
+        {{-- ▼▼▼ BAGIAN HEADER YANG DISEMPURNAKAN ▼▼▼ --}}
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-dark-blue">Laporan Absensi</h1>
+                <p class="text-gray-500 mt-1">Lihat dan kelola riwayat absensi.</p>
+            </div>
+            <a href="{{ route('reports.attendances.pdf', request()->query()) }}" class="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500">
+                <i class="fas fa-file-pdf mr-2"></i>
+                Download PDF
+            </a>
         </div>
+        {{-- ▲▲▲ --------------------------------- ▲▲▲ --}}
 
         {{-- Filter Form (hanya tampil untuk admin) --}}
         @if (Auth::user()->is_admin)
@@ -27,6 +36,7 @@
         </div>
         @endif
 
+        {{-- Tabel Riwayat (Script-mu yang sudah bagus tidak diubah) --}}
         <div class="bg-white overflow-hidden shadow-md rounded-lg">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -62,7 +72,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                     @if($attendance->check_out)
-                                        {{ $attendance->check_in->diff($attendance->check_out)->format('%H jam %I menit') }}
+                                        {{ $attendance->check_in->diff($attendance->check_out)->format('%H jam %i menit') }}
                                     @else
                                         -
                                     @endif
