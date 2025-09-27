@@ -62,6 +62,11 @@ return [
                 'icon'  => 'fa-solid fa-calendar-check',
                 'route' => 'admin.holidays.index',
             ],
+            [
+                'title' => 'Event Lembur',
+                'icon'  => 'fa-solid fa-calendar-plus',
+                'route' => 'admin.overtime-events.index',
+            ],
             // ▲▲▲ ------------------------------- ▲▲▲
             [
                 'title' => 'Jadwal Kerja',

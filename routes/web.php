@@ -1,19 +1,25 @@
 <?php
 
-use App\Http\Controllers\Admin\LocationController;
-use App\Http\Controllers\Admin\ShiftController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\LeaveController as AdminLeaveController;
-use App\Http\Controllers\Admin\HolidayController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LeaveController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\CalendarController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ShiftController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\HolidayController;
+use App\Http\Controllers\Admin\LeaveController as AdminLeaveController;
+use App\Http\Controllers\Admin\OvertimeEventController; // <-- Tambahan
+use App\Http\Controllers\OvertimeLogController; // <-- Tambahan
 
-// ... (Rute publik & rute user biasa biarkan sama) ...
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 // --- RUTE PUBLIK ---
 Route::get('/', function () {
@@ -21,53 +27,52 @@ Route::get('/', function () {
 });
 
 // --- RUTE UNTUK SEMUA USER YANG SUDAH LOGIN ---
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    // ... (Rute Absensi, Cuti Karyawan, Laporan, Profil tetap sama)
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/calendar-events', [CalendarController::class, 'getEvents'])->name('calendar.events');
+
+    // Absensi
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.checkin');
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.checkout');
 
+    // Cuti & Izin
     Route::get('/leaves', [LeaveController::class, 'index'])->name('leaves.index');
     Route::get('/leaves/create', [LeaveController::class, 'create'])->name('leaves.create');
     Route::post('/leaves', [LeaveController::class, 'store'])->name('leaves.store');
+    
+    // Lembur (BARU)
+    Route::get('/overtime-logs', [OvertimeLogController::class, 'index'])->name('overtime.index');
+    Route::get('/overtime-logs/create', [OvertimeLogController::class, 'create'])->name('overtime.create');
+    Route::post('/overtime-logs', [OvertimeLogController::class, 'store'])->name('overtime.store');
 
-    // Rute Laporan Absensi
+    // Laporan
     Route::get('/reports/attendances', [ReportController::class, 'attendances'])->name('reports.attendances');
-
-    // ▼▼▼ TAMBAHKAN RUTE INI ▼▼▼
     Route::get('/reports/attendances/pdf', [ReportController::class, 'downloadPdf'])->name('reports.attendances.pdf');
-    // ▲▲▲ ----------------------- ▲▲▲
 
+    // Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    Route::get('/calendar-events', [CalendarController::class, 'getEvents'])->name('calendar.events');
 });
 
-
 // --- RUTE KHUSUS UNTUK ADMIN ---
-// ▼▼▼ PERUBAHAN UTAMA ADA DI SINI ▼▼▼
 Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('locations', LocationController::class);
     Route::resource('users', UserController::class);
     Route::resource('shifts', ShiftController::class);
-
-    // Rute untuk manajemen hari libur
+    Route::resource('locations', LocationController::class);
+    
+    // Event Lembur (BARU)
+    Route::resource('overtime-events', OvertimeEventController::class);
+    
+    // Persetujuan Cuti
+    Route::get('/leaves', [AdminLeaveController::class, 'index'])->name('leaves.index');
+    Route::put('/leaves/{leave}', [AdminLeaveController::class, 'update'])->name('leaves.update');
+    
+    // Hari Libur
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
     Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
     Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
-
-    // Rute untuk manajemen persetujuan cuti oleh admin
-    // Namanya kita ubah menjadi admin.leaves.index agar tidak bentrok
-    Route::get('/leaves', [AdminLeaveController::class, 'index'])->name('leaves.index'); 
-    Route::put('/leaves/{leave}', [AdminLeaveController::class, 'update'])->name('leaves.update');
 });
-// ▲▲▲ ------------------------------ ▲▲▲
 
-
-// Mengimpor semua rute untuk autentikasi
 require __DIR__.'/auth.php';

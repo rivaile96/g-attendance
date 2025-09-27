@@ -6,7 +6,7 @@
     <style>
         body { 
             font-family: 'Helvetica', 'Arial', sans-serif; 
-            font-size: 12px; 
+            font-size: 11px; /* Ukuran font sedikit dikecilkan agar muat */
             color: #333;
         }
         .page-break {
@@ -19,7 +19,7 @@
         }
         th, td { 
             border: 1px solid #ccc; 
-            padding: 8px; 
+            padding: 7px; 
             text-align: left; 
         }
         th { 
@@ -49,6 +49,7 @@
                 <th>Jam Pulang</th>
                 <th>Total Jam</th>
                 <th>Status</th>
+                <th>Lokasi</th> {{-- <-- KOLOM BARU --}}
             </tr>
         </thead>
         <tbody>
@@ -67,10 +68,13 @@
                         @endif
                     </td>
                     <td>{{ $attendance->status }}</td>
+                    {{-- ▼▼▼ TAMBAHKAN DATA LOKASI DI SINI ▼▼▼ --}}
+                    <td>{{ $attendance->location?->name ?? 'N/A' }}</td>
+                    {{-- ▲▲▲ ------------------------------- ▲▲▲ --}}
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Tidak ada data untuk periode ini.</td>
+                    <td colspan="8" class="text-center">Tidak ada data untuk periode ini.</td>
                 </tr>
             @endforelse
         </tbody>
