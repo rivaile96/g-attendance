@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\User;
+use App\Models\OvertimeLog; // <-- Tambahan
+use App\Exports\OvertimeExport; // <-- Tambahan
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel; // <-- Tambahan
 
 class ReportController extends Controller
 {
@@ -42,7 +45,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Method untuk men-download laporan PDF.
+     * Method untuk men-download laporan Absensi PDF.
      */
     public function downloadPdf(Request $request)
     {
@@ -71,5 +74,66 @@ class ReportController extends Controller
         $pdf = Pdf::loadView('reports.attendances_pdf', compact('attendances'));
 
         return $pdf->download('laporan-absensi-' . now()->format('d-m-Y') . '.pdf');
+    }
+
+    /**
+     * Menampilkan halaman Laporan Lembur dengan filter.
+     */
+    public function overtimes(Request $request)
+    {
+        $query = OvertimeLog::with(['user.division', 'overtimeEvent'])
+                           ->where('status', 'Approved'); // hanya lembur yang disetujui
+
+        // Filter tanggal
+        if ($request->filled('start_date')) {
+            $query->whereDate('start_time', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('start_time', '<=', $request->end_date);
+        }
+
+        // Filter user
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $overtimeLogs = $query->latest()->paginate(20)->withQueryString();
+        $users = User::orderBy('name')->get();
+
+        return view('reports.overtimes', compact('overtimeLogs', 'users'));
+    }
+
+    /**
+     * Export Laporan Lembur (PDF atau Excel).
+     */
+    public function exportOvertimes(Request $request)
+    {
+        $type = $request->query('type', 'pdf'); // default pdf
+
+        $query = OvertimeLog::with(['user.division', 'overtimeEvent'])
+                           ->where('status', 'Approved');
+
+        // Filter tanggal
+        if ($request->filled('start_date')) {
+            $query->whereDate('start_time', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('start_time', '<=', $request->end_date);
+        }
+
+        // Filter user
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $overtimeLogs = $query->latest()->get();
+        $filename = 'laporan-lembur-' . now()->format('d-m-Y') . '.' . $type;
+
+        if ($type === 'xlsx') {
+            return Excel::download(new OvertimeExport($overtimeLogs), $filename);
+        } else {
+            $pdf = Pdf::loadView('reports.overtimes_pdf', compact('overtimeLogs'));
+            return $pdf->download($filename);
+        }
     }
 }

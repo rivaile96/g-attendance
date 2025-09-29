@@ -31,12 +31,27 @@ return [
         'route' => 'overtime.index',
         'role'  => ['admin', 'user'],
     ],
+    
+    // ▼▼▼ BAGIAN LAPORAN YANG SUDAH DIJADIKAN DROPDOWN ▼▼▼
     [
         'title' => 'Laporan',
         'icon'  => 'fa-solid fa-chart-line',
-        'route' => 'reports.attendances',
-        'role'  => ['admin', 'user'],
+        'role'  => ['admin', 'user'], // Role yang bisa melihat dropdown ini
+        'submenu' => [
+            [
+                'title' => 'Laporan Absensi',
+                'icon'  => 'fa-solid fa-clipboard-user',
+                'route' => 'reports.attendances',
+                // role untuk submenu tidak perlu didefinisikan lagi, akan ikut parent
+            ],
+            [
+                'title' => 'Laporan Lembur',
+                'icon'  => 'fa-solid fa-file-invoice',
+                'route' => 'reports.overtimes',
+            ],
+        ]
     ],
+    // ▲▲▲ -------------------------------------------- ▲▲▲
     
     /**
      * =================================================================
@@ -58,13 +73,11 @@ return [
                 'icon'  => 'fa-solid fa-check-to-slot',
                 'route' => 'admin.leaves.index',
             ],
-            // ▼▼▼ INI MENU BARU YANG DITAMBAHKAN ▼▼▼
             [
                 'title' => 'Persetujuan Lembur',
                 'icon'  => 'fa-solid fa-user-clock',
                 'route' => 'admin.overtime-approvals.index',
             ],
-            // ▲▲▲ ------------------------------ ▲▲▲
             [
                 'title' => 'Hari Libur',
                 'icon'  => 'fa-solid fa-calendar-check',

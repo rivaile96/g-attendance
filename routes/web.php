@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/overtime-logs/{event}/create', [OvertimeLogController::class, 'create'])->name('overtime.create');
     Route::post('/overtime-logs', [OvertimeLogController::class, 'store'])->name('overtime.store');
 
-    // Laporan
+    // Laporan Absensi
     Route::get('/reports/attendances', [ReportController::class, 'attendances'])->name('reports.attendances');
     Route::get('/reports/attendances/pdf', [ReportController::class, 'downloadPdf'])->name('reports.attendances.pdf');
 
@@ -65,10 +65,9 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
     // Event Lembur (BARU)
     Route::resource('overtime-events', OvertimeEventController::class);
     
-    // ▼▼▼ TAMBAHKAN DUA BARIS INI ▼▼▼
+    // Persetujuan Lembur
     Route::get('/overtime-approvals', [\App\Http\Controllers\Admin\OvertimeApprovalController::class, 'index'])->name('overtime-approvals.index');
     Route::put('/overtime-approvals/{log}', [\App\Http\Controllers\Admin\OvertimeApprovalController::class, 'update'])->name('overtime-approvals.update');
-    // ▲▲▲ ------------------------- ▲▲▲
     
     // Persetujuan Cuti
     Route::get('/leaves', [AdminLeaveController::class, 'index'])->name('leaves.index');
@@ -81,3 +80,7 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
 });
 
 require __DIR__.'/auth.php';
+
+// --- RUTE TAMBAHAN LAPORAN LEMBUR ---
+Route::get('/reports/overtimes', [ReportController::class, 'overtimes'])->name('reports.overtimes');
+Route::get('/reports/overtimes/export', [ReportController::class, 'exportOvertimes'])->name('reports.overtimes.export');
