@@ -43,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Lembur (BARU)
     Route::get('/overtime-logs', [OvertimeLogController::class, 'index'])->name('overtime.index');
-    Route::get('/overtime-logs/create', [OvertimeLogController::class, 'create'])->name('overtime.create');
+    Route::get('/overtime-logs/{event}/create', [OvertimeLogController::class, 'create'])->name('overtime.create');
     Route::post('/overtime-logs', [OvertimeLogController::class, 'store'])->name('overtime.store');
 
     // Laporan
@@ -64,6 +64,11 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
     
     // Event Lembur (BARU)
     Route::resource('overtime-events', OvertimeEventController::class);
+    
+    // ▼▼▼ TAMBAHKAN DUA BARIS INI ▼▼▼
+    Route::get('/overtime-approvals', [\App\Http\Controllers\Admin\OvertimeApprovalController::class, 'index'])->name('overtime-approvals.index');
+    Route::put('/overtime-approvals/{log}', [\App\Http\Controllers\Admin\OvertimeApprovalController::class, 'update'])->name('overtime-approvals.update');
+    // ▲▲▲ ------------------------- ▲▲▲
     
     // Persetujuan Cuti
     Route::get('/leaves', [AdminLeaveController::class, 'index'])->name('leaves.index');

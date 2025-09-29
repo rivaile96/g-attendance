@@ -19,16 +19,18 @@ return [
         'route' => 'attendance.index',
         'role'  => ['admin', 'user'],
     ],
-
-    // ▼▼▼ MENU BARU DISUNTIKKAN DI SINI ▼▼▼
     [
         'title' => 'Cuti & Izin',
         'icon'  => 'fa-solid fa-calendar-day',
-        'route' => 'leaves.index', // Ini akan menjadi rute yang akan kita buat
+        'route' => 'leaves.index',
         'role'  => ['admin', 'user'],
     ],
-    // ▲▲▲ AKHIR DARI MENU BARU ▲▲▲
-
+    [
+        'title' => 'Lembur',
+        'icon'  => 'fa-solid fa-business-time',
+        'route' => 'overtime.index',
+        'role'  => ['admin', 'user'],
+    ],
     [
         'title' => 'Laporan',
         'icon'  => 'fa-solid fa-chart-line',
@@ -51,12 +53,18 @@ return [
                 'icon'  => 'fa-solid fa-users',
                 'route' => 'admin.users.index',
             ],
-            // ▼▼▼ TAMBAHAN ITEM BARU UNTUK ADMIN ▼▼▼
             [
                 'title' => 'Persetujuan Cuti',
                 'icon'  => 'fa-solid fa-check-to-slot',
                 'route' => 'admin.leaves.index',
             ],
+            // ▼▼▼ INI MENU BARU YANG DITAMBAHKAN ▼▼▼
+            [
+                'title' => 'Persetujuan Lembur',
+                'icon'  => 'fa-solid fa-user-clock',
+                'route' => 'admin.overtime-approvals.index',
+            ],
+            // ▲▲▲ ------------------------------ ▲▲▲
             [
                 'title' => 'Hari Libur',
                 'icon'  => 'fa-solid fa-calendar-check',
@@ -67,7 +75,6 @@ return [
                 'icon'  => 'fa-solid fa-calendar-plus',
                 'route' => 'admin.overtime-events.index',
             ],
-            // ▲▲▲ ------------------------------- ▲▲▲
             [
                 'title' => 'Jadwal Kerja',
                 'icon'  => 'fa-solid fa-clock',
