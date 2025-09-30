@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\User;
-use App\Models\OvertimeLog; // <-- Tambahan
-use App\Exports\OvertimeExport; // <-- Tambahan
+use App\Models\OvertimeLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel; // <-- Tambahan
+use App\Exports\OvertimeExport;
+use App\Exports\AttendanceExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -22,17 +23,18 @@ class ReportController extends Controller
         
         $query = Attendance::with('user.division', 'location')->orderBy('check_in', 'desc');
 
-        if (!$user->is_admin) {
-            $query->where('user_id', $user->id);
+        // Terapkan filter tanggal untuk semua role
+        if ($request->filled('start_date')) {
+            $query->whereDate('check_in', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('check_in', '<=', $request->end_date);
         }
 
-        if ($user->is_admin) {
-            if ($request->filled('start_date')) {
-                $query->whereDate('check_in', '>=', $request->start_date);
-            }
-            if ($request->filled('end_date')) {
-                $query->whereDate('check_in', '<=', $request->end_date);
-            }
+        // Terapkan filter spesifik berdasarkan role
+        if (!$user->is_admin) {
+            $query->where('user_id', $user->id);
+        } else {
             if ($request->filled('user_id')) {
                 $query->where('user_id', $request->user_id);
             }
@@ -45,35 +47,41 @@ class ReportController extends Controller
     }
 
     /**
-     * Method untuk men-download laporan Absensi PDF.
+     * Method untuk men-download laporan absensi dalam format PDF atau Excel.
      */
-    public function downloadPdf(Request $request)
+    public function exportAttendances(Request $request)
     {
         $user = Auth::user();
+        $type = $request->query('type', 'pdf');
         
         $query = Attendance::with('user.division', 'location')->orderBy('check_in', 'desc');
 
-        if (!$user->is_admin) {
-            $query->where('user_id', $user->id);
+        // Terapkan filter tanggal untuk semua role
+        if ($request->filled('start_date')) {
+            $query->whereDate('check_in', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('check_in', '<=', $request->end_date);
         }
 
-        if ($user->is_admin) {
-            if ($request->filled('start_date')) {
-                $query->whereDate('check_in', '>=', $request->start_date);
-            }
-            if ($request->filled('end_date')) {
-                $query->whereDate('check_in', '<=', $request->end_date);
-            }
+        // Terapkan filter spesifik berdasarkan role
+        if (!$user->is_admin) {
+            $query->where('user_id', $user->id);
+        } else {
             if ($request->filled('user_id')) {
                 $query->where('user_id', $request->user_id);
             }
         }
         
         $attendances = $query->get();
-        
-        $pdf = Pdf::loadView('reports.attendances_pdf', compact('attendances'));
+        $filename = 'laporan-absensi-' . now()->format('d-m-Y') . '.' . $type;
 
-        return $pdf->download('laporan-absensi-' . now()->format('d-m-Y') . '.pdf');
+        if ($type == 'xlsx') {
+            return Excel::download(new AttendanceExport($attendances), $filename);
+        } else {
+            $pdf = Pdf::loadView('reports.attendances_pdf', compact('attendances'));
+            return $pdf->download($filename);
+        }
     }
 
     /**
@@ -81,10 +89,12 @@ class ReportController extends Controller
      */
     public function overtimes(Request $request)
     {
+        $user = Auth::user();
+        
         $query = OvertimeLog::with(['user.division', 'overtimeEvent'])
-                           ->where('status', 'Approved'); // hanya lembur yang disetujui
+                           ->where('status', 'Approved');
 
-        // Filter tanggal
+        // Terapkan filter tanggal untuk semua role
         if ($request->filled('start_date')) {
             $query->whereDate('start_time', '>=', $request->start_date);
         }
@@ -92,13 +102,17 @@ class ReportController extends Controller
             $query->whereDate('start_time', '<=', $request->end_date);
         }
 
-        // Filter user
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+        // Terapkan filter spesifik berdasarkan role
+        if (!$user->is_admin) {
+            $query->where('user_id', $user->id);
+        } else {
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
         }
-
+        
         $overtimeLogs = $query->latest()->paginate(20)->withQueryString();
-        $users = User::orderBy('name')->get();
+        $users = $user->is_admin ? User::orderBy('name')->get() : [];
 
         return view('reports.overtimes', compact('overtimeLogs', 'users'));
     }
@@ -108,12 +122,13 @@ class ReportController extends Controller
      */
     public function exportOvertimes(Request $request)
     {
-        $type = $request->query('type', 'pdf'); // default pdf
+        $user = Auth::user();
+        $type = $request->query('type', 'pdf');
 
         $query = OvertimeLog::with(['user.division', 'overtimeEvent'])
                            ->where('status', 'Approved');
 
-        // Filter tanggal
+        // Terapkan filter tanggal untuk semua role
         if ($request->filled('start_date')) {
             $query->whereDate('start_time', '>=', $request->start_date);
         }
@@ -121,9 +136,13 @@ class ReportController extends Controller
             $query->whereDate('start_time', '<=', $request->end_date);
         }
 
-        // Filter user
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+        // Terapkan filter spesifik berdasarkan role
+        if (!$user->is_admin) {
+            $query->where('user_id', $user->id);
+        } else {
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
         }
 
         $overtimeLogs = $query->latest()->get();

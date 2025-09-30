@@ -8,11 +8,11 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+                <div class="p-4 sm:p-6 text-gray-900">
                     
                     {{-- FORM FILTER --}}
                     <form method="GET" action="{{ route('reports.overtimes') }}" class="mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                             <div>
                                 <label for="start_date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
                                 <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
@@ -21,7 +21,8 @@
                                 <label for="end_date" class="block text-sm font-medium text-gray-700">Tanggal Selesai</label>
                                 <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                             </div>
-                            <div>
+                            @if(Auth::user()->is_admin)
+                            <div class="w-full">
                                 <label for="user_id" class="block text-sm font-medium text-gray-700">Karyawan</label>
                                 <select name="user_id" id="user_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     <option value="">Semua Karyawan</option>
@@ -32,6 +33,7 @@
                                     @endforeach
                                 </select>
                             </div>
+                            @endif
                             <div class="flex items-center space-x-2">
                                 <button type="submit" class="w-full justify-center inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Filter</button>
                                 <a href="{{ route('reports.overtimes') }}" class="w-full justify-center inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Reset</a>
@@ -52,8 +54,8 @@
                     </div>
                     @endif
 
-                    {{-- TABEL DATA --}}
-                    <div class="overflow-x-auto border rounded-lg">
+                    {{-- TAMPILAN DESKTOP (TABLE) --}}
+                    <div class="hidden md:block overflow-x-auto border rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -98,7 +100,45 @@
                         </table>
                     </div>
 
+                    {{-- TAMPILAN MOBILE (CARDS) --}}
+                    <div class="block md:hidden space-y-4">
+                        @php $totalMinutesMobile = 0; @endphp
+                        @forelse ($overtimeLogs as $log)
+                            <div class="p-4 bg-white border rounded-lg shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-gray-900">{{ $log->user->name }}</p>
+                                        <p class="text-sm text-gray-500">{{ optional($log->overtimeEvent)->name }}</p>
+                                    </div>
+                                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                        @php
+                                            $duration = $log->start_time->diffInMinutes($log->end_time);
+                                            $totalMinutesMobile += $duration;
+                                            echo floor($duration / 60) . 'j ' . ($duration % 60) . 'm';
+                                        @endphp
+                                    </span>
+                                </div>
+                                <div class="mt-3 text-sm text-gray-600 border-t pt-3">
+                                    <p><i class="fa-solid fa-calendar-day w-4 mr-1 text-gray-400"></i> {{ $log->start_time->translatedFormat('d M Y') }}</p>
+                                    <p><i class="fa-solid fa-clock w-4 mr-1 text-gray-400"></i> {{ $log->start_time->format('H:i') }} - {{ $log->end_time->format('H:i') }}</p>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-4 border border-dashed rounded-md text-center text-gray-500">
+                                Tidak ada data lembur yang disetujui untuk filter ini.
+                            </div>
+                        @endforelse
+
+                        @if($overtimeLogs->count() > 0)
+                        <div class="p-4 bg-gray-50 font-bold text-right rounded-lg">
+                            Total Durasi: {{ floor($totalMinutesMobile / 60) . ' jam ' . ($totalMinutesMobile % 60) . ' menit' }}
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Paginasi --}}
                     <div class="mt-4">{{ $overtimeLogs->links() }}</div>
+
                 </div>
             </div>
         </div>

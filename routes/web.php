@@ -48,7 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Laporan Absensi
     Route::get('/reports/attendances', [ReportController::class, 'attendances'])->name('reports.attendances');
-    Route::get('/reports/attendances/pdf', [ReportController::class, 'downloadPdf'])->name('reports.attendances.pdf');
+    Route::get('/reports/attendances/export', [ReportController::class, 'exportAttendances'])->name('reports.attendances.export');
 
     // Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
