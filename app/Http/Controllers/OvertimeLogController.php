@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\OvertimeEvent;
 use App\Models\OvertimeLog;
+use App\Models\Division; // <-- 1. TAMBAHKAN INI
+use App\Models\User;     // <-- 1. TAMBAHKAN INI
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -18,15 +20,24 @@ class OvertimeLogController extends Controller
         $user = Auth::user();
         $today = Carbon::today('Asia/Jakarta')->toDateString();
 
-        // Query $availableEvents tetap sama
+        // ▼▼▼ BAGIAN QUERY INI YANG KITA UBAH TOTAL ▼▼▼
         $availableEvents = OvertimeEvent::where('start_date', '<=', $today)
             ->where('end_date', '>=', $today)
-            ->whereHas('assignments', function ($query) use ($user) {
-                $query->where('assignable_type', 'App\Models\Division')
-                      ->where('assignable_id', $user->division_id);
+            ->where(function ($query) use ($user) {
+                // Kondisi 1: Event ditugaskan ke divisi si user
+                $query->whereHas('assignments', function ($subQuery) use ($user) {
+                    $subQuery->where('assignable_type', Division::class)
+                             ->where('assignable_id', $user->division_id);
+                });
+                // ATAU Kondisi 2: Event ditugaskan langsung ke si user
+                $query->orWhereHas('assignments', function ($subQuery) use ($user) {
+                    $subQuery->where('assignable_type', User::class)
+                             ->where('assignable_id', $user->id);
+                });
             })
             ->latest()
             ->get();
+        // ▲▲▲ ----------------------------------------- ▲▲▲
         
         // Ambil ID dari semua event yang sudah pernah di-klaim oleh user
         $claimedEventIds = OvertimeLog::where('user_id', $user->id)
@@ -39,21 +50,32 @@ class OvertimeLogController extends Controller
                                    ->latest()
                                    ->paginate(10);
 
-        // Tambahkan $claimedEventIds ke compact()
         return view('overtime_logs.index', compact('availableEvents', 'overtimeLogs', 'claimedEventIds'));
     }
 
     /**
      * Menampilkan form untuk mengajukan klaim lembur berdasarkan event tertentu.
+     * (Tidak ada perubahan di sini)
      */
     public function create(OvertimeEvent $event)
     {
         $user = Auth::user();
         $today = Carbon::today('Asia/Jakarta')->toDateString();
 
+        // Cek otorisasi, apakah user boleh akses event ini
+        $isAssignedToDivision = $event->assignments()
+                                ->where('assignable_type', Division::class)
+                                ->where('assignable_id', $user->division_id)
+                                ->exists();
+
+        $isAssignedToUser = $event->assignments()
+                             ->where('assignable_type', User::class)
+                             ->where('assignable_id', $user->id)
+                             ->exists();
+
         if (
-            !($event->start_date->lte($today) && $event->end_date->gte($today)) ||
-            !$event->assignments()->where('assignable_type', 'App\Models\Division')->where('assignable_id', $user->division_id)->exists()
+            !(\Carbon\Carbon::parse($event->start_date)->lte($today) && \Carbon\Carbon::parse($event->end_date)->gte($today)) ||
+            !($isAssignedToDivision || $isAssignedToUser)
         ) {
             abort(403, 'Anda tidak ditugaskan untuk event lembur ini atau event sudah tidak aktif.');
         }
@@ -63,6 +85,7 @@ class OvertimeLogController extends Controller
 
     /**
      * Menyimpan klaim lembur baru ke database dengan validasi ketat.
+     * (Tidak ada perubahan di sini)
      */
     public function store(Request $request)
     {
@@ -77,7 +100,6 @@ class OvertimeLogController extends Controller
         $user = Auth::user();
         $event = OvertimeEvent::findOrFail($validated['overtime_event_id']);
         
-        // 1. Cek apakah user sudah pernah klaim untuk event ini
         $alreadyClaimed = OvertimeLog::where('user_id', $user->id)
             ->where('overtime_event_id', $event->id)
             ->exists();
@@ -86,12 +108,10 @@ class OvertimeLogController extends Controller
             return back()->with('error', 'Anda sudah pernah mengajukan klaim untuk event ini.');
         }
 
-        // 2. Cek apakah tanggal yang disubmit sesuai dengan hari ini
         if ($validated['date'] != now()->toDateString()) {
             return back()->with('error', 'Tanggal pengajuan harus hari ini.');
         }
         
-        // 3. Cek apakah jam mulai yang disubmit sesuai dengan jam event
         if ($validated['start_time'] != \Carbon\Carbon::parse($event->start_time)->format('H:i')) {
             return back()->with('error', 'Jam mulai tidak sesuai dengan jadwal event.');
         }

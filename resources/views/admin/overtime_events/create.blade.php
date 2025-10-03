@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="bg-white p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+    <div x-data="{ assignmentType: 'division' }" class="bg-white p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
         <h1 class="text-3xl font-bold text-dark-blue mb-6">Buat Event Lembur Baru</h1>
         <form action="{{ route('admin.overtime-events.store') }}" method="POST">
             @csrf
@@ -8,39 +8,69 @@
                 <div class="space-y-4">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">Nama Event Lembur</label>
-                        <input type="text" name="name" id="name" class="mt-1 w-full rounded-md" required>
+                        <input type="text" name="name" id="name" value="{{ old('name') }}" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi (Opsional)</label>
-                        <textarea name="description" id="description" rows="3" class="mt-1 w-full rounded-md"></textarea>
+                        <textarea name="description" id="description" rows="4" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('description') }}</textarea>
                     </div>
+
+                    {{-- Pilihan Tipe Penugasan --}}
                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Tipe Penugasan</label>
+                        <div class="mt-2 flex items-center space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="assignment_type" value="division" x-model="assignmentType">
+                                <span class="ml-2">Per Divisi</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="assignment_type" value="user" x-model="assignmentType">
+                                <span class="ml-2">Per Karyawan</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Divisi --}}
+                    <div x-show="assignmentType === 'division'">
                         <label for="division_ids" class="block text-sm font-medium text-gray-700">Tugaskan ke Divisi</label>
-                        <select name="division_ids[]" id="division_ids" multiple class="mt-1 w-full rounded-md">
+                        <select name="division_ids[]" id="division_ids" multiple class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                             @foreach ($divisions as $division)
                                 <option value="{{ $division->id }}">{{ $division->name }}</option>
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-500 mt-1">Tahan Ctrl (atau Cmd di Mac) untuk memilih lebih dari satu.</p>
                     </div>
+
+                    {{-- Dropdown Karyawan --}}
+                    <div x-show="assignmentType === 'user'" style="display: none;">
+                        <label for="user_ids" class="block text-sm font-medium text-gray-700">Tugaskan ke Karyawan</label>
+                        <select name="user_ids[]" id="user_ids" multiple class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Tahan Ctrl (atau Cmd di Mac) untuk memilih lebih dari satu.</p>
+                    </div>
+
                 </div>
+
                 {{-- Kolom Kanan --}}
                 <div class="space-y-4">
                      <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
-                        <input type="date" name="start_date" id="start_date" class="mt-1 w-full rounded-md" required>
+                        <input type="date" name="start_date" id="start_date" value="{{ old('start_date') }}" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700">Tanggal Selesai</label>
-                        <input type="date" name="end_date" id="end_date" class="mt-1 w-full rounded-md" required>
+                        <input type="date" name="end_date" id="end_date" value="{{ old('end_date') }}" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                      <div>
                         <label for="start_time" class="block text-sm font-medium text-gray-700">Jam Mulai</label>
-                        <input type="time" name="start_time" id="start_time" class="mt-1 w-full rounded-md" required>
+                        <input type="time" name="start_time" id="start_time" value="{{ old('start_time') }}" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                     <div>
                         <label for="end_time" class="block text-sm font-medium text-gray-700">Jam Selesai</label>
-                        <input type="time" name="end_time" id="end_time" class="mt-1 w-full rounded-md" required>
+                        <input type="time" name="end_time" id="end_time" value="{{ old('end_time') }}" class="mt-1 w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
                 </div>
             </div>

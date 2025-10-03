@@ -1,123 +1,96 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{
-        showRejectModal: false,
-        showApproveModal: false,
-        selectedLeave: null,
-        rejectionReason: '',
-        formAction: ''
-    }">
-
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-8">
         <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-dark-blue">Persetujuan Cuti & Izin</h1>
-                <p class="text-gray-500 mt-1">Review dan proses pengajuan dari karyawan.</p>
-            </div>
+            <h1 class="text-3xl font-bold text-dark-blue">Persetujuan Cuti & Izin</h1>
         </div>
 
-        @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-6" role="alert">
-                <p>{{ session('success') }}</p>
-            </div>
+        @if(session('success'))
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-6" role="alert">
+            {{ session('success') }}
+        </div>
         @endif
-
-        <div class="bg-white overflow-hidden shadow-md rounded-lg">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Karyawan</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse ($leaves as $leave)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ $leave->user->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $leave->user->division->name ?? 'N/A' }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $leave->type }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $leave->start_date->format('d M') }} - {{ $leave->end_date->format('d M Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
-                                        $statusClass = [
-                                            'Pending' => 'bg-yellow-100 text-yellow-800',
-                                            'Approved' => 'bg-green-100 text-green-800',
-                                            'Rejected' => 'bg-red-100 text-red-800',
-                                        ][$leave->status] ?? 'bg-gray-100 text-gray-800';
-                                    @endphp
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
-                                        {{ $leave->status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    @if ($leave->status === 'Pending')
-                                        <button @click="showApproveModal = true; selectedLeave = {{ $leave }}; formAction = '{{ route('admin.leaves.update', $leave) }}'" class="text-green-600 hover:text-green-900">Approve</button>
-                                        <button @click="showRejectModal = true; selectedLeave = {{ $leave }}; formAction = '{{ route('admin.leaves.update', $leave) }}'" class="text-red-600 hover:text-red-900 ml-4">Reject</button>
+        
+        <div x-data="{ openId: null }" class="bg-white overflow-hidden shadow-md rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi / Info</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse ($leaves as $leave)
+                    <tr @click="openId = (openId === {{ $leave->id }}) ? null : {{ $leave->id }}" class="hover:bg-gray-50 cursor-pointer">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ $leave->user->name }}</div>
+                            <div class="text-sm text-gray-500">{{ optional($leave->user->division)->name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $leave->type }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ $leave->start_date->format('d M') }} - {{ $leave->end_date->format('d M Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span @class([
+                                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                'bg-yellow-100 text-yellow-800' => $leave->status === 'Pending',
+                                'bg-green-100 text-green-800' => $leave->status === 'Approved',
+                                'bg-red-100 text-red-800' => $leave->status === 'Rejected',
+                            ])>
+                                {{ $leave->status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            @if ($leave->status === 'Pending')
+                                <div @click.stop class="flex items-center space-x-2">
+                                    <button @click="showLeaveConfirmation({{ json_encode($leave) }}, 'Approved')" type="button" class="text-indigo-600 hover:text-indigo-900 focus:outline-none">Approve</button>
+                                    <span class="text-gray-300">|</span>
+                                    <button @click="showLeaveConfirmation({{ json_encode($leave) }}, 'Rejected')" type="button" class="text-red-600 hover:text-red-900 focus:outline-none">Reject</button>
+                                </div>
+                            @else
+                                <span class="text-sm text-gray-500">Diproses oleh {{ optional($leave->approver)->name }}</span>
+                            @endif
+                        </td>
+                    </tr>
+                    
+                    {{-- Baris baru untuk menampilkan detail alasan dan lampiran --}}
+                    <tr x-show="openId === {{ $leave->id }}" x-collapse style="display: none;">
+                        <td colspan="5" class="p-4 bg-blue-50 border-y border-blue-200">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <strong class="block font-semibold text-dark-blue mb-2">Alasan / Keterangan:</strong>
+                                    <p class="whitespace-pre-wrap pl-2 border-l-2 border-blue-300 text-gray-800">{{ $leave->reason ?: 'Tidak ada alasan.' }}</p>
+                                </div>
+                                <div>
+                                    <strong class="block font-semibold text-dark-blue mb-2">Lampiran:</strong>
+                                    @if($leave->attachment_path)
+                                        <a href="{{ Storage::url($leave->attachment_path) }}" target="_blank" class="text-indigo-600 hover:underline">
+                                            Lihat Lampiran <i class="fa-solid fa-external-link-alt ml-1"></i>
+                                        </a>
                                     @else
-                                        <span class="text-gray-400">Diproses</span>
+                                        <span class="text-gray-500">Tidak ada lampiran.</span>
                                     @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-center py-4 text-gray-500">Tidak ada pengajuan cuti.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div class="p-4">{{ $leaves->links() }}</div>
-        </div>
-
-        <div x-show="showApproveModal" class="fixed z-10 inset-0 overflow-y-auto" x-cloak>
-            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-                <div class="fixed inset-0 transition-opacity" @click="showApproveModal = false">
-                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-                </div>
-                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <form :action="formAction" method="POST">
-                        @csrf @method('PUT')
-                        <input type="hidden" name="status" value="Approved">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Konfirmasi Persetujuan</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500">Apakah Anda yakin ingin menyetujui pengajuan cuti dari <strong x-text="selectedLeave ? selectedLeave.user.name : ''"></strong>?</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm">Setujui</button>
-                            <button type="button" @click="showApproveModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="5" class="text-center py-6 text-gray-500">Belum ada pengajuan cuti & izin.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-
-        <div x-show="showRejectModal" class="fixed z-10 inset-0 overflow-y-auto" x-cloak>
-            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-                <div class="fixed inset-0 transition-opacity" @click="showRejectModal = false">
-                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-                </div>
-                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <form :action="formAction" method="POST">
-                        @csrf @method('PUT')
-                        <input type="hidden" name="status" value="Rejected">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Konfirmasi Penolakan</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500 mb-2">Berikan alasan penolakan untuk pengajuan dari <strong x-text="selectedLeave ? selectedLeave.user.name : ''"></strong>.</p>
-                                <textarea name="rejection_reason" x-model="rejectionReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Alasan penolakan..." required></textarea>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm">Tolak Pengajuan</button>
-                            <button type="button" @click="showRejectModal = false; rejectionReason = ''" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+         <div class="mt-4">
+            {{ $leaves->links() }}
         </div>
     </div>
+
+    <form id="leave-approval-form" method="POST" class="hidden">
+        @csrf
+        @method('PUT')
+        <input type="hidden" name="status" id="leave-approval-status">
+        <input type="hidden" name="rejection_reason" id="rejection_reason">
+    </form>
 </x-app-layout>
