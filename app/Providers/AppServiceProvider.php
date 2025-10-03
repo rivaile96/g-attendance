@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator; // Make sure this is imported
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Blade; // 1. Tambahkan import Blade
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,7 +21,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Tell Laravel to use our custom view
         Paginator::defaultView('vendor.pagination.tailwind');
+
+        // ▼▼▼ 2. TAMBAHKAN BLOK KODE INI ▼▼▼
+        /**
+         * Membuat custom Blade directive @admin.
+         * Ini akan mengecek apakah user yang sedang login adalah admin.
+         */
+        Blade::if('admin', function () {
+            return \Auth::check() && \Auth::user()->is_admin;
+        });
+        // ▲▲▲ --------------------------------- ▲▲▲
     }
 }
